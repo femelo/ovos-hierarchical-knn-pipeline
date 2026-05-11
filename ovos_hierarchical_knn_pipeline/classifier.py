@@ -423,6 +423,9 @@ class HierarchicalPairKNNClassifier:
 
         Requires ``huggingface_hub`` (``pip install huggingface-hub``).
 
+        Only the ONNX file referenced by ``encoder_file`` in ``meta.pkl`` is
+        downloaded; all other ONNX variants are skipped to save bandwidth.
+
         Parameters
         ----------
         repo_id:
@@ -434,16 +437,43 @@ class HierarchicalPairKNNClassifier:
             Branch, tag, or commit hash to download. Defaults to ``main``.
         """
         try:
-            from huggingface_hub import snapshot_download
+            from huggingface_hub import hf_hub_download, snapshot_download
         except ImportError:
             raise ImportError(
                 "huggingface_hub is required for from_pretrained(). "
                 "Install it with: pip install huggingface-hub"
             )
+        cache_dir_str = str(cache_dir) if cache_dir is not None else None
+
+        # Fetch meta.pkl first to find out which ONNX file is actually needed.
+        meta_path = hf_hub_download(
+            repo_id=repo_id,
+            filename="meta.pkl",
+            cache_dir=cache_dir_str,
+            revision=revision,
+        )
+        with open(meta_path, "rb") as f:
+            meta = pickle.load(f)
+
+        encoder_file = meta.get("encoder_file")
+
+        # Skip every known ONNX variant except the one we need.
+        _known_onnx = [
+            "onnx/model_q4.onnx",
+            "onnx/model_quint8_avx2.onnx",
+            "onnx/model_uint8.onnx",
+            "onnx/model.onnx",
+        ]
+        if encoder_file:
+            ignore_patterns = [f for f in _known_onnx if f != f"onnx/{encoder_file}"]
+        else:
+            ignore_patterns = []
+
         local_dir = snapshot_download(
             repo_id=repo_id,
-            cache_dir=str(cache_dir) if cache_dir is not None else None,
+            cache_dir=cache_dir_str,
             revision=revision,
+            ignore_patterns=ignore_patterns if ignore_patterns else None,
         )
         return cls.from_disk(local_dir)
 
