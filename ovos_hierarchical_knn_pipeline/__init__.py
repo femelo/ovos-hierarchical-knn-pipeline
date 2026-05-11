@@ -24,7 +24,12 @@ class HierarchicalKNNIntentPipeline(ConfidenceMatcherPipeline):
     (ocp:play, common_query:common_query, stop:stop).
 
     Configuration keys (under intents → ovos_hierarchical_knn_pipeline):
-        index_dir      — path to the directory produced by build_index.py (required)
+        index_dir      — path to a local index directory produced by build_index.py;
+                         when omitted the default pre-built index is downloaded from
+                         HuggingFace (fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2)
+        hf_repo_id     — HuggingFace repo to download when index_dir is not set
+                         (default: fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2)
+        hf_cache_dir   — local cache directory for the HuggingFace snapshot
         conf_high      — minimum probability for match_high  (default 0.7)
         conf_medium    — minimum probability for match_medium (default 0.5)
         conf_low       — minimum probability for match_low   (default 0.15)
@@ -46,17 +51,24 @@ class HierarchicalKNNIntentPipeline(ConfidenceMatcherPipeline):
         super().__init__(bus, config)
 
         index_dir = self.config.get("index_dir")
-        if not index_dir:
-            raise FileNotFoundError(
-                "'index_dir' not set in configuration for ovos_hierarchical_knn_pipeline"
+        if index_dir:
+            self.model = HierarchicalPairKNNClassifier.from_disk(index_dir)
+            LOG.info(f"Loaded HierarchicalKNN pipeline from: '{index_dir}'")
+        else:
+            repo_id = self.config.get(
+                "hf_repo_id",
+                "fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2",
             )
-
-        self.model = HierarchicalPairKNNClassifier.from_disk(index_dir)
+            cache_dir = self.config.get("hf_cache_dir")
+            LOG.info(f"Downloading HierarchicalKNN index from HuggingFace: '{repo_id}'")
+            self.model = HierarchicalPairKNNClassifier.from_pretrained(
+                repo_id=repo_id,
+                cache_dir=cache_dir,
+            )
+            LOG.info("HierarchicalKNN index downloaded and loaded.")
 
         self.intents: List[str] = []
         self.ignore_labels: List[str] = self.config.get("ignore_intents") or []
-
-        LOG.info(f"Loaded HierarchicalKNN pipeline from: '{index_dir}'")
 
         self.bus.on("mycroft.ready", self.handle_sync_intents)
         self.bus.on("padatious:register_intent", self.handle_sync_intents)

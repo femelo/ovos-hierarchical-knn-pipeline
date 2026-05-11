@@ -171,7 +171,7 @@ def generate_llm_paraphrases(examples, lang, needed):
         return []
 
 
-def main(input_path, output_path, model_name, encoder_file=None):
+def main(input_path, output_path, model_name, encoder_file="model.onnx"):
     df = pd.read_csv(input_path)
     print(f"Loaded {len(df)} rows. Encoding sentences with {model_name}...")
 

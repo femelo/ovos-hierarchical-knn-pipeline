@@ -404,6 +404,41 @@ class HierarchicalPairKNNClassifier:
 
         return obj
 
+    @classmethod
+    def from_pretrained(
+        cls,
+        repo_id: str = "fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2",
+        cache_dir: str | Path | None = None,
+        revision: str | None = None,
+    ) -> "HierarchicalPairKNNClassifier":
+        """Download a pre-built index from HuggingFace Hub and load it.
+
+        Requires ``huggingface_hub`` (``pip install huggingface-hub``).
+
+        Parameters
+        ----------
+        repo_id:
+            HuggingFace repo in ``owner/name`` format.
+        cache_dir:
+            Local directory where the snapshot is cached.
+            Defaults to the HuggingFace cache (``~/.cache/huggingface/hub``).
+        revision:
+            Branch, tag, or commit hash to download. Defaults to ``main``.
+        """
+        try:
+            from huggingface_hub import snapshot_download
+        except ImportError:
+            raise ImportError(
+                "huggingface_hub is required for from_pretrained(). "
+                "Install it with: pip install huggingface-hub"
+            )
+        local_dir = snapshot_download(
+            repo_id=repo_id,
+            cache_dir=str(cache_dir) if cache_dir is not None else None,
+            revision=revision,
+        )
+        return cls.from_disk(local_dir)
+
     # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------

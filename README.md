@@ -35,17 +35,7 @@ pip install ovos-hierarchical-knn-pipeline
 
 ## ⚙️ Configuration
 
-Download the pre-built index and model from HuggingFace:
-
-```bash
-python -c "
-from huggingface_hub import snapshot_download
-path = snapshot_download('fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2')
-print(path)
-"
-```
-
-Then add the following to your `mycroft.conf`:
+Add the following to your `mycroft.conf`. When `index_dir` is omitted the default pre-built index is downloaded automatically from HuggingFace on first run:
 
 ```json
 {
@@ -63,7 +53,6 @@ Then add the following to your `mycroft.conf`:
       "fallback-low"
     ],
     "ovos_hierarchical_knn_pipeline": {
-      "index_dir": "/path/to/downloaded/index",
       "conf_high": 0.7,
       "conf_medium": 0.5,
       "conf_low": 0.15,
@@ -73,10 +62,28 @@ Then add the following to your `mycroft.conf`:
 }
 ```
 
-* `index_dir`: Path to the directory downloaded from HuggingFace (required).
-* `conf_xxx`: Minimum confidence threshold for intent matching at each pipeline stage.
-* `ignore_intents`: List of intents to suppress during matching.
-* `renormalize`: Re-scale surviving probabilities to sum to 1 after filtering (default `false`).
+To use a local copy (faster startup, no internet required):
+
+```json
+{
+  "intents": {
+    "ovos_hierarchical_knn_pipeline": {
+      "index_dir": "/path/to/local/index"
+    }
+  }
+}
+```
+
+| Key | Default | Description |
+|---|---|---|
+| `index_dir` | *(auto-download)* | Path to a local index directory. When omitted the index is downloaded from HuggingFace. |
+| `hf_repo_id` | `fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2` | HuggingFace repo to download when `index_dir` is not set. |
+| `hf_cache_dir` | HF default cache | Local directory for the downloaded snapshot. |
+| `conf_high` | `0.7` | Minimum confidence for `match_high`. |
+| `conf_medium` | `0.5` | Minimum confidence for `match_medium`. |
+| `conf_low` | `0.15` | Minimum confidence for `match_low`. |
+| `ignore_intents` | `[]` | Intent labels to suppress. |
+| `renormalize` | `false` | Re-scale surviving probabilities to sum to 1 after filtering. |
 
 > ⚠️ The FAISS index is pre-built on a fixed dataset and **cannot learn new skills** dynamically. Skills not covered by the index are still reachable through the Adapt and Padatious stages of the pipeline.
 
