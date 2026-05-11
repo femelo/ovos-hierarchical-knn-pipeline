@@ -36,6 +36,7 @@ class HierarchicalPairKNNClassifier:
         tau: float = 0.05,
         margin: float = 0.10,
         anchor_to_global: bool = True,
+        renormalize: bool = True,
         encoder_file: str | None = None,
     ) -> None:
         self.k = k
@@ -48,6 +49,7 @@ class HierarchicalPairKNNClassifier:
         self.tau = tau
         self.margin = margin
         self.anchor_to_global = anchor_to_global
+        self.renormalize = renormalize
 
         self.model_path = model_path
         self.encoder_file = encoder_file  # ONNX filename override; not persisted in meta
@@ -335,6 +337,7 @@ class HierarchicalPairKNNClassifier:
             "tau": self.tau,
             "margin": self.margin,
             "anchor_to_global": self.anchor_to_global,
+            "renormalize": self.renormalize,
             "classes": self.classes,
             "classes_flattened": self.classes_flattened,
             "min_domain_count": min_domain_count,
@@ -378,6 +381,7 @@ class HierarchicalPairKNNClassifier:
         obj.tau = meta.get("tau", 0.05)
         obj.margin = meta.get("margin", 0.10)
         obj.anchor_to_global = meta.get("anchor_to_global", True)
+        obj.renormalize = meta.get("renormalize", True)
         # Restore the exact ONNX file used at build time so inference embeddings
         # are produced by the same encoder.  Falls back to auto-detect (None) for
         # indexes built before this field was recorded.
@@ -742,10 +746,14 @@ class HierarchicalPairKNNClassifier:
         self.probabilities = [np.concatenate(p, axis=0) for p in lvl_probabilities]
         self.selected_classes = [np.concatenate(s, axis=0) for s in lvl_selected]
 
-        return [
-            dict(zip(map(str, c_vals), map(float, p_vals)))
-            for c_vals, p_vals in zip(all_sel, all_prior)
-        ]
+        results = []
+        for c_vals, p_vals in zip(all_sel, all_prior):
+            if self.renormalize:
+                total = p_vals.sum()
+                if total > 0:
+                    p_vals = p_vals / total
+            results.append(dict(zip(map(str, c_vals), map(float, p_vals))))
+        return results
 
     def predict(self, documents, level: int | None = None) -> list[str]:
         _ = self.predict_proba(documents, level=level)

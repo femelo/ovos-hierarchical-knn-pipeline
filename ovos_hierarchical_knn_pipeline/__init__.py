@@ -126,7 +126,7 @@ class HierarchicalKNNIntentPipeline(ConfidenceMatcherPipeline):
             LOG.warning("No KNN predictions match registered intents")
             return
 
-        if self.config.get("renormalize"):
+        if self.config.get("renormalize", True):
             total = sum(filtered.values())
             if total > 0:
                 filtered = {k: v / total for k, v in filtered.items()}
