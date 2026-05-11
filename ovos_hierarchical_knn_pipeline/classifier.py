@@ -330,6 +330,7 @@ class HierarchicalPairKNNClassifier:
             "pq_m": self.pq_m,
             "nprobe": self.nprobe,
             "model_path": self.model_path,
+            "encoder_file": self.encoder.onnx_filename if hasattr(self.encoder, "onnx_filename") else None,
             "gamma": self.gamma,
             "tau": self.tau,
             "margin": self.margin,
@@ -377,7 +378,10 @@ class HierarchicalPairKNNClassifier:
         obj.tau = meta.get("tau", 0.05)
         obj.margin = meta.get("margin", 0.10)
         obj.anchor_to_global = meta.get("anchor_to_global", True)
-        obj.encoder_file = None  # auto-detect at inference time
+        # Restore the exact ONNX file used at build time so inference embeddings
+        # are produced by the same encoder.  Falls back to auto-detect (None) for
+        # indexes built before this field was recorded.
+        obj.encoder_file = meta.get("encoder_file", None)
         obj.probabilities = []
         obj.selected_classes = []
         obj._encoder = None

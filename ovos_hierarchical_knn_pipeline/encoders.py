@@ -138,6 +138,7 @@ class GraniteEncoder:
         batch_size: int = 512,
         num_threads: int = 4,
     ) -> None:
+        self.onnx_filename = onnx_filename
         import onnxruntime as ort
         from tokenizers import Tokenizer
 
@@ -174,7 +175,7 @@ class GraniteEncoder:
         attention_mask = np.array([e.attention_mask for e in encodings], dtype=np.int64)
         outputs = self._session.run(None, {"input_ids": input_ids, "attention_mask": attention_mask})
         last_hidden_state = outputs[0]          # (batch, seq_len, hidden_size)
-        cls_embs = last_hidden_state[:, 0, :]   # CLS token
+        cls_embs = last_hidden_state[:, 0, :]   # CLS token (pooling_mode_cls_token per 1_Pooling/config.json)
         return cls_embs.astype(np.float32)
 
     def _encode(self, texts: list[str], show_progress_bar: bool) -> np.ndarray:
