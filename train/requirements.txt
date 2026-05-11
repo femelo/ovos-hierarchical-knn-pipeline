@@ -1,0 +1,20 @@
+# Training-time dependencies for scripts in this folder.
+# Install alongside the plugin: pip install -r train/requirements.txt
+
+# Data handling
+pandas
+pyarrow          # parquet read/write
+
+# ML / clustering
+scikit-learn
+
+# Visualisation (create_diverse_subset.py, detect_multimodality.py)
+matplotlib
+seaborn
+
+# Data augmentation (preprocess_data.py, balance_dataset.py)
+faker
+
+# LLM paraphrase augmentation — optional (balance_dataset.py only)
+# Requires GEMINI_API_KEY environment variable to be set.
+google-generativeai
