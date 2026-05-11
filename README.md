@@ -105,6 +105,16 @@ The `HierarchicalKNNIntentPipeline` class integrates with the OVOS intent system
 
 ---
 
+## 🏗 Building a custom index
+
+To train on a different skill set or language combination, see the [train/README.md](train/README.md) for the full pipeline:
+
+```
+preprocess_data.py  →  balance_dataset.py  →  encode_dataset.py  →  build_index.py
+```
+
+---
+
 ## 🛡 License
 
 This project is licensed under the [Apache 2.0 License](LICENSE).
