@@ -31,6 +31,13 @@ def parse_args():
              "Granite if onnx/model_quint8_avx2.onnx or onnx/model_uint8.onnx exists, "
              "otherwise model2vec StaticModel.",
     )
+    p.add_argument(
+        "--encoder-file",
+        default="model.onnx",
+        help="ONNX filename inside <model>/onnx/ to load "
+             "(default: 'model.onnx' for full F32 precision). "
+             "Use 'model_quint8_avx2.onnx' for the quantised AVX2 variant.",
+    )
     return p.parse_args()
 
 
@@ -47,8 +54,8 @@ def main():
         print(f"  Dropping {len(existing_dim_cols)} existing dim_* columns.")
         df = df.drop(columns=existing_dim_cols)
 
-    print(f"Encoding with {args.model}…")
-    encoder = load_encoder(args.model)
+    print(f"Encoding with {args.model} ({args.encoder_file})…")
+    encoder = load_encoder(args.model, onnx_filename=args.encoder_file)
     embeddings = encoder.encode_documents(df["sentence"].tolist(), show_progress_bar=True)
 
     print("Expanding embeddings into dim_* columns…")

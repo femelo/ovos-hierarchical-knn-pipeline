@@ -171,11 +171,11 @@ def generate_llm_paraphrases(examples, lang, needed):
         return []
 
 
-def main(input_path, output_path, model_name):
+def main(input_path, output_path, model_name, encoder_file=None):
     df = pd.read_csv(input_path)
     print(f"Loaded {len(df)} rows. Encoding sentences with {model_name}...")
 
-    encoder = load_encoder(model_name)
+    encoder = load_encoder(model_name, onnx_filename=encoder_file)
     embeddings = encoder.encode_documents(df["sentence"].tolist(), show_progress_bar=True)
     df["embedding"] = list(embeddings)
 
@@ -335,7 +335,15 @@ if __name__ == "__main__":
              "Granite ONNX if <path>/onnx/model_quint8_avx2.onnx exists, "
              "otherwise model2vec StaticModel.",
     )
+    parser.add_argument(
+        "--encoder-file",
+        type=str,
+        default="model.onnx",
+        help="ONNX filename inside <model>/onnx/ to load "
+             "(default: 'model.onnx' for full F32 precision). "
+             "Use 'model_quint8_avx2.onnx' for the quantised AVX2 variant.",
+    )
 
     args = parser.parse_args()
-    main(args.input, args.output, args.model)
+    main(args.input, args.output, args.model, args.encoder_file)
 

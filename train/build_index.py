@@ -71,6 +71,11 @@ def parse_args():
                    help="Anchor the margin shell and decay to the global (unfiltered) nearest "
                         "neighbor distance rather than the nearest candidate in the pool. "
                         "Disable with --no-anchor-to-global to test the effect in isolation.")
+    p.add_argument("--encoder-file", default="model.onnx",
+                   help="ONNX filename to use for encoding when building from CSV "
+                        "(e.g. 'model.onnx' for full F32 precision, "
+                        "'model_quint8_avx2.onnx' for quantised). "
+                        "Ignored when building from Parquet with pre-computed embeddings.")
     p.add_argument("--sanity-only", action="store_true",
                    help="Skip build and only run the sanity check on an existing index.")
     return p.parse_args()
@@ -161,6 +166,7 @@ def main():
             tau=args.tau,
             margin=args.margin,
             anchor_to_global=args.anchor_to_global,
+            encoder_file=args.encoder_file if embeddings is None else None,
         )
         clf.build(
             df["sentence"].tolist(),

@@ -4,12 +4,17 @@ Encoder abstraction used by the classifier.
 Three implementations are provided:
   StaticModelEncoder    — wraps model2vec StaticModel (fast, low-memory, dim=64)
   EmbeddingGemmaEncoder — EmbeddingGemma ONNX (Q4_0) with document/query prefixes, dim=768
-  GraniteEncoder        — IBM Granite ONNX (quint8 avx2), CLS pooling, no prefixes, dim=768
+  GraniteEncoder        — IBM Granite ONNX, CLS pooling, no prefixes, dim=768
 
 load_encoder(model_path) auto-detects which one to instantiate by directory layout:
-  • <path>/onnx/model_q4.onnx present          → EmbeddingGemmaEncoder
-  • <path>/onnx/model_quint8_avx2.onnx present → GraniteEncoder
-  • otherwise                                  → StaticModelEncoder
+  • <path>/onnx/model_q4.onnx present           → EmbeddingGemmaEncoder
+  • <path>/onnx/model_quint8_avx2.onnx present  → GraniteEncoder (quantised, AVX2)
+  • <path>/onnx/model_uint8.onnx present        → GraniteEncoder (quantised)
+  • <path>/onnx/model.onnx present              → GraniteEncoder (full F32)
+  • otherwise                                   → StaticModelEncoder
+
+Pass onnx_filename to force a specific ONNX file, e.g. "model.onnx" at build time
+for maximum-precision embeddings.
 """
 
 from __future__ import annotations
@@ -124,7 +129,7 @@ class GraniteEncoder:
       model_uint8.onnx        — granite-107m-onnx
     """
 
-    ONNX_FILENAMES = ("model_quint8_avx2.onnx", "model_uint8.onnx")
+    ONNX_FILENAMES = ("model_quint8_avx2.onnx", "model_uint8.onnx", "model.onnx")
 
     def __init__(
         self,
@@ -191,13 +196,30 @@ class GraniteEncoder:
 AnyEncoder = StaticModelEncoder | EmbeddingGemmaEncoder | GraniteEncoder
 
 
-def load_encoder(model_path: str) -> AnyEncoder:
-    """Return the right encoder for model_path, auto-detected by directory layout."""
+def load_encoder(model_path: str, onnx_filename: str | None = None) -> AnyEncoder:
+    """Return the right encoder for model_path.
+
+    When onnx_filename is given the auto-detection is skipped and that specific
+    ONNX file is loaded as a GraniteEncoder.  Use this to force full-precision
+    embeddings at build time (e.g. onnx_filename="model.onnx").
+
+    Auto-detection order (when onnx_filename is None):
+      model_q4.onnx          → EmbeddingGemmaEncoder
+      model_quint8_avx2.onnx → GraniteEncoder
+      model_uint8.onnx       → GraniteEncoder
+      model.onnx             → GraniteEncoder
+      (none of the above)    → StaticModelEncoder
+    """
     p = Path(model_path)
+    if onnx_filename is not None:
+        onnx_path = p / "onnx" / onnx_filename
+        if not onnx_path.exists():
+            raise FileNotFoundError(f"Requested encoder file not found: {onnx_path}")
+        return GraniteEncoder(model_path, onnx_filename=onnx_filename)
     if (p / "onnx" / EmbeddingGemmaEncoder.ONNX_FILENAME).exists():
         return EmbeddingGemmaEncoder(model_path)
-    for onnx_filename in GraniteEncoder.ONNX_FILENAMES:
-        if (p / "onnx" / onnx_filename).exists():
-            return GraniteEncoder(model_path, onnx_filename=onnx_filename)
+    for fn in GraniteEncoder.ONNX_FILENAMES:
+        if (p / "onnx" / fn).exists():
+            return GraniteEncoder(model_path, onnx_filename=fn)
     return StaticModelEncoder(model_path)
 

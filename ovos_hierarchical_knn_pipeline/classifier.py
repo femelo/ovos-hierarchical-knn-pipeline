@@ -36,6 +36,7 @@ class HierarchicalPairKNNClassifier:
         tau: float = 0.05,
         margin: float = 0.10,
         anchor_to_global: bool = True,
+        encoder_file: str | None = None,
     ) -> None:
         self.k = k
         self.n = n
@@ -49,6 +50,7 @@ class HierarchicalPairKNNClassifier:
         self.anchor_to_global = anchor_to_global
 
         self.model_path = model_path
+        self.encoder_file = encoder_file  # ONNX filename override; not persisted in meta
         self.gamma = gamma
         self.classes_flattened = np.unique(classes)
         self.classes = self._get_classes_levels(classes)
@@ -92,7 +94,7 @@ class HierarchicalPairKNNClassifier:
     @property
     def encoder(self) -> AnyEncoder:
         if self._encoder is None:
-            self._encoder = load_encoder(self.model_path)
+            self._encoder = load_encoder(self.model_path, onnx_filename=self.encoder_file)
         return self._encoder
 
     def _encode_documents(self, documents, show_progress_bar: bool = False) -> np.ndarray:
@@ -375,6 +377,7 @@ class HierarchicalPairKNNClassifier:
         obj.tau = meta.get("tau", 0.05)
         obj.margin = meta.get("margin", 0.10)
         obj.anchor_to_global = meta.get("anchor_to_global", True)
+        obj.encoder_file = None  # auto-detect at inference time
         obj.probabilities = []
         obj.selected_classes = []
         obj._encoder = None
