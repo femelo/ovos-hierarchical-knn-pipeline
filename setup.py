@@ -60,6 +60,12 @@ setup(
         'Topic :: Text Processing :: Linguistic',
         'License :: OSI Approved :: Apache Software License'
     ],
-    install_requires=required('requirements.txt')
+    install_requires=required('requirements.txt'),
+    extras_require={
+        'test': [
+            'pytest',
+            'ovoscope',
+        ]
+    }
 )
 

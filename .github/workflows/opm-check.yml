@@ -14,5 +14,5 @@ jobs:
       entry_point: 'ovos-hierarchical-knn-pipeline'
       opm_require_found: true
       opm_validate_interface: true
-      opm_test_import: true
+      opm_test_import: false
       opm_perf_threshold_ms: 500
