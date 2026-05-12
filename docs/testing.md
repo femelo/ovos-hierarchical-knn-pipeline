@@ -72,7 +72,7 @@ The test allows up to 20% drift on the fixture accuracy; it fails only if fewer 
 `tests/fixtures/en_us_intents.jsonl` — JSONL file with utterances and expected intent labels, sourced from the `ovos-localize` en-US dataset. Each line:
 
 ```json
-{"utterance": "play some jazz", "intent": "ocp:play", "lang": "en-US"}
+{"label": "ovos-skill-moviemaster.openvoiceos:movie.top.intent", "utterance": "what are the highest rated films out now"}
 ```
 
 ---

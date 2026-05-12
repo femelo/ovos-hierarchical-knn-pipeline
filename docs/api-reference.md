@@ -169,7 +169,7 @@ def set_active_domains(self, domains: list[str]) -> None
 
 Restrict L1 search to the given list of domains. L2 search inherits the restriction.
 
-Pass an empty list or call with `domains=list(clf.classes[0])` to reset to the full domain set.
+Pass an empty list to reset to the full domain set.
 
 ```python
 clf.set_active_domains(["weather", "timer"])

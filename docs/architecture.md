@@ -6,7 +6,7 @@ This document explains how the classifier and pipeline plugin work from the insi
 
 ## Overview
 
-```
+```text
 User utterance
       │
       ▼
@@ -50,7 +50,7 @@ Raw k-NN distances are converted to probabilities using a pairwise kernel method
 
 Each neighbour at distance `d` contributes a decayed weight:
 
-```
+```text
 w = exp(-γ · d)
 ```
 
@@ -124,7 +124,7 @@ This ensures that intents from skills that load after the pipeline starts are im
 
 ## File structure of a built index
 
-```
+```text
 index_dir/
 ├── index.faiss              ← FAISS IVF+PQ index
 ├── label_ids.npy            ← label-to-class-ID mapping per hierarchy level

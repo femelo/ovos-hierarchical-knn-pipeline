@@ -10,7 +10,7 @@ This guide walks you through building a FAISS index from your own intent dataset
 
 ## Pipeline overview
 
-```
+```text
 raw_intents.csv
       │
       ▼  preprocess_data.py   — normalise labels, fill placeholders
