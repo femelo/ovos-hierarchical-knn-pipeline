@@ -397,9 +397,17 @@ class TestSpecialLabelGating(unittest.TestCase):
 
     def test_empty_session_pipeline_falls_back_to_all(self):
         p = self._make()
-        msg = self._msg([])
+        # Session(pipeline=[]) may silently use class defaults, so we patch
+        # SessionManager.get to return a session with an explicitly empty pipeline.
+        from ovos_bus_client.session import Session
+        empty_sess = Session(session_id="s")
+        empty_sess.pipeline = []
+        msg = self._msg(["ovos-ocp-pipeline-plugin-high"])  # arbitrary, overridden below
+        with patch("ovos_hierarchical_knn_pipeline.SessionManager") as MockSM:
+            MockSM.get.return_value = empty_sess
+            result = p._allowed_special_labels(msg)
         self.assertEqual(
-            p._allowed_special_labels(msg),
+            result,
             {"ocp:play", "common_query:common_query", "stop:stop"},
         )
 

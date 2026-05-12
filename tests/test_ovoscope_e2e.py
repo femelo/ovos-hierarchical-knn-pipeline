@@ -14,6 +14,10 @@ import threading
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+ovoscope = pytest.importorskip("ovoscope", reason="ovoscope not installed; skipping E2E tests")
+
 from ovos_bus_client.message import Message
 from ovos_bus_client.session import Session
 from ovos_config.config import Configuration
