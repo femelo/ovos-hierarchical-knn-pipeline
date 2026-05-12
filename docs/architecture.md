@@ -46,24 +46,34 @@ Final probabilities are the product of domain probability (L1) × intent probabi
 
 Raw k-NN distances are converted to probabilities using a pairwise kernel method derived from Wu & Lin (2004).
 
-### Basic form
+### Adaptive neighbourhood (default)
 
-Each neighbour at distance `d` contributes a decayed weight:
+`predict_proba` uses `_get_probabilities_with_adaptive_neighborhood`. Each neighbour at distance `d` contributes a **Gaussian-decayed** weight anchored at a reference distance `d_anchor` (typically the nearest-neighbour distance from the unfiltered global search):
+
+```python
+sigma = margin / gamma
+centered = d - d_anchor
+decay = np.exp(-(centered ** 2) / (2 * sigma ** 2))
+decay = np.clip(decay, 1e-10, 1.0)
+```
+
+The neighbour pool is then further constrained:
+
+1. **Exact-match override**: if the nearest neighbour distance ≤ `tau` (default 0.05), the nearest class wins 100%.
+2. **Adaptive margin**: only neighbours within `[d_anchor, d_anchor + margin]` are considered. Neighbours closer than `d_anchor` are always included; neighbours beyond `d_anchor + margin` are excluded.
+3. **Dynamic k**: the effective neighbourhood size scales with the number of active classes and the distance spread, rather than being a fixed hyperparameter.
+
+Anchoring on `d_anchor` from the *unfiltered* global search keeps the Gaussian's spread and the margin window invariant to domain-restricted candidate pools — `set_active_domains` does not change the shape of the kernel.
+
+### Simple exponential form (`_get_probabilities`)
+
+A second, simpler kernel is also implemented for reference and for callers that don't want the adaptive behaviour:
 
 ```text
 w = exp(-γ · d)
 ```
 
-Weights are accumulated per class and normalised to sum to 1.
-
-### Adaptive neighbourhood (default)
-
-The standard form is sensitive to the scale of distances, which varies with domain density. The adaptive form anchors the margin and decay to a reference distance `d_anchor`:
-
-1. **Exact-match override**: if the nearest neighbour distance ≤ `tau` (default 0.05), the nearest class wins 100%.
-2. **Adaptive margin**: only neighbours within `[d_anchor, d_anchor + margin]` are considered. Neighbours closer than `d_anchor` are always included; neighbours beyond `d_anchor + margin` are excluded.
-3. **Distance decay**: weights use a Gaussian kernel anchored at `d_anchor`, keeping the effective decay invariant to domain density.
-4. **Dynamic k**: the effective neighbourhood size scales with the number of active classes and the distance spread, rather than being a fixed hyperparameter.
+This is plain exponential decay with no anchor, no margin, and no dynamic k. It is not used by `predict_proba`; the adaptive Gaussian variant above is the default.
 
 ### Parameters
 
