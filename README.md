@@ -83,7 +83,7 @@ To use a local copy (faster startup, no internet required):
 | `conf_medium` | `0.5` | Minimum confidence for `match_medium`. |
 | `conf_low` | `0.15` | Minimum confidence for `match_low`. |
 | `ignore_intents` | `[]` | Intent labels to suppress. |
-| `renormalize` | `true` | Re-scale surviving probabilities to sum to 1 after filtering. |
+| `renormalize` | `false` | Re-scale surviving probabilities to sum to 1 after filtering (the classifier already renormalises internally; flipping this on re-scales a second time over the registered intents only). |
 
 > ⚠️ The FAISS index is pre-built on a fixed dataset and **cannot learn new skills** dynamically. Skills not covered by the index are still reachable through the Adapt and Padatious stages of the pipeline.
 

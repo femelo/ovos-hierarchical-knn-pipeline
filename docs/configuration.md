@@ -29,7 +29,7 @@ All options live under `intents.ovos_hierarchical_knn_pipeline` in `mycroft.conf
       "conf_medium": 0.5,
       "conf_low": 0.15,
       "ignore_intents": [],
-      "renormalize": true,
+      "renormalize": false,
       "timeout": 1
     }
   }
@@ -135,13 +135,13 @@ Example — suppress the OCP play intent so it is always handled by the OCP pipe
 | | |
 |---|---|
 | Type | `bool` |
-| Default | `true` |
+| Default | `false` |
 
-When `true`, probabilities are re-scaled to sum to 1 after unregistered and ignored intents are filtered out. This ensures the returned confidence score reflects the relative certainty among valid intents only.
+When `false` (the default), the raw Wu-Lin probability the classifier produced is returned. The classifier (`HierarchicalPairKNNClassifier`) already renormalises internally over its full search context, so this preserves information about how confident the classifier was overall — including the fact that probability mass was assigned to intents that aren't currently registered.
 
-When `false`, the raw Wu-Lin probability is returned. The score will be lower than usual if many intents were filtered out, because the probability mass that was assigned to filtered intents is simply discarded.
+When `true`, the surviving probabilities are re-scaled a *second* time so they sum to 1 over only the registered intents. This makes the visible candidates easier to compare against each other, but it discards the absolute-confidence signal: a weak match and a strong match both end up summing to 1.
 
-**Recommendation:** leave `true` unless you need to compare raw scores across different filter configurations.
+**Recommendation:** leave `false` to keep confidence semantics consistent across pipeline stages. Flip to `true` only when you specifically want the visible candidates to sum to 1 (e.g., for UI display).
 
 ---
 

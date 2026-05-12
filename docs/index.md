@@ -23,8 +23,8 @@ An intent matching pipeline for [OpenVoiceOS (OVOS)](https://openvoiceos.org) po
 
 - **Languages:** English, Portuguese, Spanish, French, Italian, German, Dutch, Catalan, Galician, Danish, Basque
 - **Encoder:** IBM Granite Embedding 97M Multilingual R2 (quantised ONNX, ~94 MB)
-- **Index format:** FAISS IVF+PQ (~466 MB)
-- **Total footprint:** ~560 MB
+- **Index format:** FAISS IVF+PQ (~233 MB)
+- **Total footprint:** ~320 MB RAM, ~345 MB storage (with quint8-quantised ONNX)
 - **CPU requirement:** AVX2 (for the default quantised encoder)
 - **License:** Apache 2.0
 - **HuggingFace model:** [fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2](https://huggingface.co/fdemelo/ovos-hierarchical-knn-granite-97m-multilingual-r2)

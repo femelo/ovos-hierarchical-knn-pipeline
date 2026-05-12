@@ -108,6 +108,8 @@ Special labels bypass the registered-intent filter but are gated by the session 
 
 After filtering, if `renormalize=true`, surviving probabilities are re-scaled to sum to 1.
 
+**Design note**: the classifier (`HierarchicalPairKNNClassifier`) renormalises internally over its full search context — this is intentional and stays on by default. The *plugin-level* `renormalize` knob (which re-scales again over only the surviving registered intents) defaults to `false`, because re-scaling a second time discards information about how confident the classifier was overall — it forces the visible candidates to sum to 1 even when none of them was a strong match. Enable plugin-level renormalisation when you specifically want the visible probabilities to highlight relative differences within the registered set.
+
 ---
 
 ## Dynamic intent synchronisation
