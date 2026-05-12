@@ -141,7 +141,7 @@ Full documentation — from installation to building custom indexes — lives in
 
 ## 🙏 Credits
 
-Developed by [**femelo**](https://github.com/femela) for [OpenVoiceOS](https://openvoiceos.org) under the NLnet
+Developed by [**femelo**](https://github.com/femelo) for [OpenVoiceOS](https://openvoiceos.org) under the NLnet
 [NGI0 Commons Fund](https://nlnet.nl/project/OpenVoiceOS), grant agreement No [101135429](https://cordis.europa.eu/project/id/101135429).
 
 ![NGI0 / NLnet](./ngi.png)
