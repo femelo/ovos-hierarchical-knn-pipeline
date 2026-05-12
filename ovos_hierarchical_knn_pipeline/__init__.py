@@ -43,7 +43,11 @@ class HierarchicalKNNIntentPipeline(ConfidenceMatcherPipeline):
         conf_high      — minimum probability for match_high  (default 0.7)
         conf_medium    — minimum probability for match_medium (default 0.5)
         conf_low       — minimum probability for match_low   (default 0.15)
-        renormalize    — re-scale surviving probabilities to sum to 1 (default True)
+        renormalize    — re-scale surviving probabilities to sum to 1 (default False;
+                         the classifier already renormalises internally, so
+                         flipping this on re-scales a second time over only
+                         the registered intents and loses information about
+                         how confident the classifier was overall)
         ignore_intents — list of intent labels to suppress
         timeout        — bus wait timeout in seconds (default 1)
     """
@@ -194,7 +198,7 @@ class HierarchicalKNNIntentPipeline(ConfidenceMatcherPipeline):
             LOG.warning("No KNN predictions match registered intents")
             return
 
-        if self.config.get("renormalize", True):
+        if self.config.get("renormalize", False):
             total = sum(filtered.values())
             if total > 0:
                 filtered = {k: v / total for k, v in filtered.items()}
