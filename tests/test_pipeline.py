@@ -46,13 +46,16 @@ class TestInit(unittest.TestCase):
         p = _make_pipeline(config={"index_dir": "/fake", "ignore_intents": ["skill:bad.intent"]})
         self.assertIn("skill:bad.intent", p.ignore_labels)
 
-    def test_missing_index_dir_raises(self):
-        with patch("ovos_hierarchical_knn_pipeline.HierarchicalPairKNNClassifier"), \
+    def test_missing_index_dir_falls_back_to_hf(self):
+        # When index_dir is empty/missing, the plugin should download a
+        # pre-built index from HuggingFace via `from_pretrained`.
+        with patch("ovos_hierarchical_knn_pipeline.HierarchicalPairKNNClassifier") as MockCLF, \
              patch("ovos_hierarchical_knn_pipeline.Configuration", return_value={}):
             from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline
             from ovos_utils.fakebus import FakeBus
-            with self.assertRaises(FileNotFoundError):
-                HierarchicalKNNIntentPipeline(bus=FakeBus(), config={"index_dir": ""})
+            HierarchicalKNNIntentPipeline(bus=FakeBus(), config={"index_dir": ""})
+            MockCLF.from_pretrained.assert_called_once()
+            MockCLF.from_disk.assert_not_called()
 
 
 class TestGetAdaptIntents(unittest.TestCase):
@@ -312,6 +315,124 @@ class TestMatchConfidence(unittest.TestCase):
         msg = Message("recognizer_loop:utterance")
         result = p.match_high(["test"], "en", msg)
         self.assertIsNone(result)  # 0.9 < 0.95
+
+
+class TestInitialIntentSync(unittest.TestCase):
+    """Skills that loaded BEFORE the pipeline never emit register_intent.
+    The plugin must seed its intent list by querying the manifests on
+    construction."""
+
+    def test_seeds_intents_from_manifests_on_init(self):
+        from ovos_bus_client.message import Message as _Msg
+
+        adapt_resp = _Msg("intent.service.adapt.manifest",
+                          data={"intents": [{"name": "skill_a:foo"}]})
+        pad_resp = _Msg("intent.service.padatious.manifest",
+                        data={"intents": ["skill_b:bar"]})
+
+        def fake_wait_for_response(msg, reply_type, timeout=1):
+            if reply_type == "intent.service.adapt.manifest":
+                return adapt_resp
+            if reply_type == "intent.service.padatious.manifest":
+                return pad_resp
+            return None
+
+        mock_model = MagicMock()
+        with patch("ovos_hierarchical_knn_pipeline.HierarchicalPairKNNClassifier") as MockCLF, \
+             patch("ovos_hierarchical_knn_pipeline.Configuration", return_value={}):
+            MockCLF.from_disk.return_value = mock_model
+            from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline
+            from ovos_utils.fakebus import FakeBus
+            bus = FakeBus()
+            bus.wait_for_response = MagicMock(side_effect=fake_wait_for_response)
+            p = HierarchicalKNNIntentPipeline(
+                bus=bus, config={"index_dir": "/fake"},
+            )
+
+        self.assertIn("skill_a:foo", p.intents)
+        self.assertIn("skill_b:bar", p.intents)
+        mock_model.set_active_domains.assert_called()
+
+    def test_init_survives_missing_manifests(self):
+        mock_model = MagicMock()
+        with patch("ovos_hierarchical_knn_pipeline.HierarchicalPairKNNClassifier") as MockCLF, \
+             patch("ovos_hierarchical_knn_pipeline.Configuration", return_value={}):
+            MockCLF.from_disk.return_value = mock_model
+            from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline
+            from ovos_utils.fakebus import FakeBus
+            bus = FakeBus()
+            bus.wait_for_response = MagicMock(return_value=None)
+            p = HierarchicalKNNIntentPipeline(
+                bus=bus, config={"index_dir": "/fake"},
+            )
+        self.assertEqual(p.intents, [])
+
+
+class TestSpecialLabelGating(unittest.TestCase):
+    """`_allowed_special_labels` gates ocp/stop/common_query by session."""
+
+    def _make(self):
+        config = {"index_dir": "/fake", "renormalize": False}
+        mock_model = MagicMock()
+        mock_model.predict_proba.return_value = [{}]
+        with patch("ovos_hierarchical_knn_pipeline.HierarchicalPairKNNClassifier") as MockCLF, \
+             patch("ovos_hierarchical_knn_pipeline.Configuration", return_value={}):
+            MockCLF.from_disk.return_value = mock_model
+            from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline
+            from ovos_utils.fakebus import FakeBus
+            p = HierarchicalKNNIntentPipeline(bus=FakeBus(), config=config)
+        p.model = mock_model
+        return p
+
+    def _msg(self, pipeline):
+        from ovos_bus_client.session import Session
+        return Message("test", context={
+            "session": Session(session_id="s", pipeline=pipeline).serialize(),
+        })
+
+    def test_allows_only_pipelines_present_in_session(self):
+        p = self._make()
+        msg = self._msg(["ovos-ocp-pipeline-plugin-high"])
+        self.assertEqual(p._allowed_special_labels(msg), {"ocp:play"})
+
+    def test_empty_session_pipeline_falls_back_to_all(self):
+        p = self._make()
+        # Session(pipeline=[]) may silently use class defaults, so we patch
+        # SessionManager.get to return a session with an explicitly empty pipeline.
+        from ovos_bus_client.session import Session
+        empty_sess = Session(session_id="s")
+        empty_sess.pipeline = []
+        msg = self._msg(["ovos-ocp-pipeline-plugin-high"])  # arbitrary, overridden below
+        with patch("ovos_hierarchical_knn_pipeline.SessionManager") as MockSM:
+            MockSM.get.return_value = empty_sess
+            result = p._allowed_special_labels(msg)
+        self.assertEqual(
+            result,
+            {"ocp:play", "common_query:common_query", "stop:stop"},
+        )
+
+    def test_none_message_falls_back_to_all(self):
+        p = self._make()
+        self.assertEqual(
+            p._allowed_special_labels(None),
+            {"ocp:play", "common_query:common_query", "stop:stop"},
+        )
+
+    def test_match_filters_special_when_session_excludes_it(self):
+        p = self._make()
+        p.intents = []
+        p.model.predict_proba.return_value = [{"ocp:play": 0.95}]
+        msg = self._msg(["ovos-hierarchical-knn-pipeline"])  # no ocp
+        self.assertEqual(list(p._match("play music", msg)), [])
+
+    def test_match_passes_special_when_session_includes_it(self):
+        p = self._make()
+        p.intents = []
+        p.model.predict_proba.return_value = [{"ocp:play": 0.95}]
+        msg = self._msg(["ovos-ocp-pipeline-plugin-high"])
+        results = list(p._match("play music", msg))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0][1], "ovos.common_play.play_search")
 
 
 if __name__ == "__main__":

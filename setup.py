@@ -48,7 +48,7 @@ setup(
     description="Hierarchical KNN intent engine for OVOS, powered by IBM Granite embeddings",
     long_description="",
     long_description_content_type="text/markdown",
-    license="Apache License 2.0",
+    license="Apache-2.0",
     keywords="natural language processing",
     entry_points={'opm.pipeline': PLUGIN_ENTRY_POINT},
     url="https://github.com/femelo/ovos-hierarchical-knn-pipeline",
@@ -60,6 +60,12 @@ setup(
         'Topic :: Text Processing :: Linguistic',
         'License :: OSI Approved :: Apache Software License'
     ],
-    install_requires=required('requirements.txt')
+    install_requires=required('requirements.txt'),
+    extras_require={
+        'test': [
+            'pytest',
+            'ovoscope',
+        ]
+    }
 )
 

@@ -1,0 +1,16 @@
+name: License Check
+
+on:
+  pull_request:
+    branches: [dev, master, main]
+  workflow_dispatch:
+
+jobs:
+  license_check:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/license-check.yml@dev
+    with:
+      # Exclude the package itself (not on PyPI, appears as Error) and tqdm
+      # (pip-license-checker 0.50.0 classifies tqdm's MPL-2.0 AND MIT as
+      # WeakCopyleft; tqdm's primary license is MIT which is permissive).
+      exclude_packages: '^(ovos.hierarchical.knn.pipeline|tqdm).*'
+      exclude_licenses: '^(Mozilla Public License|MPL).*'
