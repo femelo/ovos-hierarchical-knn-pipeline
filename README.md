@@ -114,11 +114,37 @@ The `HierarchicalKNNIntentPipeline` class integrates with the OVOS intent system
 
 ## 🏗 Building a custom index
 
-To train on a different skill set or language combination, see the [train/README.md](train/README.md) for the full pipeline:
+To train on a different skill set or language combination, see [docs/training.md](docs/training.md) or the [train/README.md](train/README.md) for the full pipeline:
 
 ```
 preprocess_data.py  →  balance_dataset.py  →  encode_dataset.py  →  build_index.py
 ```
+
+---
+
+## 📚 Documentation
+
+Full documentation — from installation to building custom indexes — lives in the [`docs/`](docs/) directory:
+
+| Guide | Summary |
+|---|---|
+| [Getting Started](docs/getting-started.md) | Install, configure, and run the plugin |
+| [Configuration Reference](docs/configuration.md) | Every config key explained |
+| [Architecture](docs/architecture.md) | How the classifier and pipeline work |
+| [API Reference](docs/api-reference.md) | Public classes and methods |
+| [Training a Custom Index](docs/training.md) | Build your own index from scratch |
+| [Encoders](docs/encoders.md) | Encoder implementations and auto-detection |
+| [Testing](docs/testing.md) | Unit tests, E2E tests, live fixtures |
+| [Troubleshooting](docs/troubleshooting.md) | Common problems and fixes |
+
+---
+
+## 🙏 Credits
+
+Developed by [**femelo**](https://github.com/femela) for [OpenVoiceOS](https://openvoiceos.org) under the NLnet
+[NGI0 Commons Fund](https://nlnet.nl/project/OpenVoiceOS), grant agreement No [101135429](https://cordis.europa.eu/project/id/101135429).
+
+![NGI0 / NLnet](./ngi.png)
 
 ---
 
