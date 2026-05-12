@@ -1,9 +1,6 @@
 import time
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-# Labels that bypass the registered-intent check and are always matched
-_SPECIAL_LABELS = {"ocp:play", "common_query:common_query", "stop:stop"}
-
 from ovos_bus_client.client import MessageBusClient
 from ovos_bus_client.message import Message
 from ovos_bus_client.session import SessionManager
@@ -13,6 +10,9 @@ from ovos_utils.fakebus import FakeBus
 from ovos_utils.log import LOG
 
 from ovos_hierarchical_knn_pipeline.classifier import HierarchicalPairKNNClassifier
+
+# Labels that bypass the registered-intent check and are always matched
+_SPECIAL_LABELS = {"ocp:play", "common_query:common_query", "stop:stop"}
 
 # Map each special label to a substring that must appear in `session.pipeline`
 # entries for the label to be considered. Without the matching pipeline in the

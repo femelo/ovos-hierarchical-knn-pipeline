@@ -18,13 +18,13 @@ import pytest
 
 ovoscope = pytest.importorskip("ovoscope", reason="ovoscope not installed; skipping E2E tests")
 
-from ovos_bus_client.message import Message
-from ovos_bus_client.session import Session
-from ovos_config.config import Configuration
-from ovoscope import get_minicroft
+from ovos_bus_client.message import Message  # noqa: E402
+from ovos_bus_client.session import Session  # noqa: E402
+from ovos_config.config import Configuration  # noqa: E402
+from ovoscope import get_minicroft  # noqa: E402
 
-from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline
-from ovos_hierarchical_knn_pipeline.classifier import HierarchicalPairKNNClassifier
+from ovos_hierarchical_knn_pipeline import HierarchicalKNNIntentPipeline  # noqa: E402
+from ovos_hierarchical_knn_pipeline.classifier import HierarchicalPairKNNClassifier  # noqa: E402
 
 PIPELINE_ID = "ovos-hierarchical-knn-pipeline"
 CONFIG_KEY = "ovos_hierarchical_knn_pipeline"
