@@ -144,7 +144,9 @@ The encoder model is stored separately (either inside the same directory or refe
 | Component | Size | Load time | Inference latency |
 |---|---|---|---|
 | Granite ONNX encoder | ~94 MB | ~2 s | ~30 ms/utterance |
-| FAISS IVF+PQ index | ~466 MB | ~1 s | <5 ms/query |
-| **Total** | **~560 MB** | **~3 s** | **~35 ms** |
+| FAISS IVF+PQ index | ~233 MB | ~1 s | <5 ms/query |
+| **Total** | **~345 MB storage / ~320 MB RAM**[^total] | **~3 s** | **~35 ms** |
+
+[^total]: Storage figure includes auxiliary files (`meta.pkl`, `label_ids.npy`, `class_names.npy`, `class_to_train_ids.pkl`) on top of the encoder and FAISS index; the full on-disk footprint of the published snapshot is about 560 MB. The RAM figure is what's mapped in memory once the pipeline is loaded.
 
 These are approximate figures for a Pi 4 with 4 GB RAM. Actual performance varies with the number of loaded skills and FAISS `nprobe`.
